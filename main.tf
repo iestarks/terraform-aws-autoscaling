@@ -1,5 +1,5 @@
 #######################
-# Launch configuration
+# Launch configuration.
 #######################
 resource "aws_launch_configuration" "this" {
   count = var.create_lc ? 1 : 0

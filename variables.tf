@@ -67,37 +67,38 @@ variable "recreate_asg_when_lc_changes" {
 variable "name" {
   description = "Creates a unique name beginning with the specified prefix"
   type        = string
+  default   = "usbank"
 }
 
 variable "lc_name" {
   description = "Creates a unique name for launch configuration beginning with the specified prefix"
   type        = string
-  default     = ""
+  default     = "stage-"
 }
 
 variable "asg_name" {
   description = "Creates a unique name for autoscaling group beginning with the specified prefix"
   type        = string
-  default     = ""
+  default     = "usbank-autoscale-grp"
 }
 
 variable "launch_configuration" {
   description = "The name of the launch configuration to use (if it is created outside of this module)"
   type        = string
-  default     = ""
+  default     = "usbank-launchconfig"
 }
 
 # Launch configuration
 variable "image_id" {
   description = "The EC2 image ID to launch"
   type        = string
-  default     = ""
+  default     = "ami-0be2609ba883822ec"
 }
 
 variable "instance_type" {
   description = "The size of instance to launch"
   type        = string
-  default     = ""
+  default     = "t2.micro"
 }
 
 variable "iam_instance_profile" {
@@ -182,21 +183,25 @@ variable "placement_tenancy" {
 variable "max_size" {
   description = "The maximum size of the auto scale group"
   type        = string
+   default = "4"
 }
 
 variable "min_size" {
   description = "The minimum size of the auto scale group"
   type        = string
+  default = "0"
 }
 
 variable "desired_capacity" {
   description = "The number of Amazon EC2 instances that should be running in the group"
   type        = string
+  default =  "4"
 }
 
 variable "vpc_zone_identifier" {
   description = "A list of subnet IDs to launch resources in"
   type        = list(string)
+  default     = ["subnet-0e20da1368e759895","subnet-0362a51a955d46f09"]
 }
 
 variable "default_cooldown" {
@@ -214,6 +219,7 @@ variable "health_check_grace_period" {
 variable "health_check_type" {
   description = "Controls how health checking is done. Values are - EC2 and ELB"
   type        = string
+  default     = "ELB"
 }
 
 variable "force_delete" {
