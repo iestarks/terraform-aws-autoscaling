@@ -85,7 +85,7 @@ variable "asg_name" {
 variable "launch_configuration" {
   description = "The name of the launch configuration to use (if it is created outside of this module)"
   type        = string
-  default     = "usbank-launchconfig"
+  default     = ""
 }
 
 # Launch configuration
@@ -110,7 +110,7 @@ variable "iam_instance_profile" {
 variable "key_name" {
   description = "The key name that should be used for the instance"
   type        = string
-  default     = ""
+  default     = "web"
 }
 
 variable "security_groups" {
@@ -189,13 +189,13 @@ variable "max_size" {
 variable "min_size" {
   description = "The minimum size of the auto scale group"
   type        = string
-  default = "0"
+  default = "1"
 }
 
 variable "desired_capacity" {
   description = "The number of Amazon EC2 instances that should be running in the group"
   type        = string
-  default =  "4"
+  default =  "2"
 }
 
 variable "vpc_zone_identifier" {

@@ -1,6 +1,10 @@
 #######################
 # Launch configuration.
 #######################
+
+
+
+
 resource "aws_launch_configuration" "this" {
   count = var.create_lc ? 1 : 0
 
@@ -51,6 +55,16 @@ resource "aws_launch_configuration" "this" {
     }
   }
 
+  user_data = <<USER_DATA
+#!/bin/bash
+yum update
+yum -y install nginx
+echo "$(curl http://169.254.169.254/latest/meta-data/local-ipv4)" > /usr/share/nginx/html/index.html
+chkconfig nginx on
+service nginx start
+  USER_DATA
+
+
   lifecycle {
     create_before_destroy = true
   }
@@ -77,7 +91,8 @@ resource "aws_autoscaling_group" "this" {
   min_size             = var.min_size
   desired_capacity     = var.desired_capacity
 
-  load_balancers            = var.load_balancers
+  #load_balancers            = var.load_balancers
+  load_balancers             = module.elb.id
   health_check_grace_period = var.health_check_grace_period
   health_check_type         = var.health_check_type
 
@@ -184,3 +199,12 @@ resource "random_pet" "asg_name" {
     lc_name = var.create_lc ? element(concat(aws_launch_configuration.this.*.name, [""]), 0) : var.launch_configuration
   }
 }
+
+# resource "local_file" "instance_ids" {
+#   filename = "instance_ids.txt"
+#   content = <<-EOT
+#     %{ for id in data.aws_launch_configuration.this[count.index]}
+#     ${id}
+#     %{ endfor }
+#   EOT
+# }
