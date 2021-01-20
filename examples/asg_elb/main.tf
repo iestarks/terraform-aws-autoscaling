@@ -1,22 +1,47 @@
 provider "aws" {
-  region = "eu-west-1"
+  region = "us-east-1"
 }
+
+#############################################################
+# Data sources to get VPC Details
+##############################################################
+data "aws_vpc" "usbank_vpc" {
+  filter {
+    name = "tag:Name"
+    values = ["bankus_east-1-vpc"]
+  }
+}
+
 
 ##############################################################
-# Data sources to get VPC, subnets and security group details
+# Data sources to get subnets
 ##############################################################
-data "aws_vpc" "default" {
-  default = true
+
+data "aws_subnet_ids" "public" {
+  vpc_id = data.aws_vpc.usbank_vpc.id
+  #  filter {
+  #   name   = "tag:Name"
+     #values = ["bankus_east-1-vpc-public-us-east-1a"] # insert value here
+  tags = {
+  Name = "bankus_east-1-vpc-public-us-east-1a" # insert value here
+  }
 }
 
-data "aws_subnet_ids" "all" {
-  vpc_id = data.aws_vpc.default.id
+
+
+data "aws_security_group" "this" {
+ vpc_id = data.aws_vpc.usbank_vpc.id
+  #  filter {
+  #   name   = "tag:Name"
+     #values = ["bankus_east-1-vpc-public-us-east-1a"] # insert value here
+  tags = {
+  Name = "usbank-appserv" # insert value here
+  }
 }
 
-data "aws_security_group" "default" {
-  vpc_id = data.aws_vpc.default.id
-  name   = "default"
-}
+
+
+
 
 data "aws_ami" "amazon_linux" {
   most_recent = true
@@ -55,7 +80,8 @@ module "example_asg" {
 
   image_id        = data.aws_ami.amazon_linux.id
   instance_type   = "t2.micro"
-  security_groups = [data.aws_security_group.default.id]
+  security_groups = [data.aws_security_group.this.id]
+  #security_groups = var.appsgname
   load_balancers  = [module.elb.this_elb_id]
 
   ebs_block_device = [
@@ -76,8 +102,8 @@ module "example_asg" {
 
   # Auto scaling group
   asg_name                  = "example-asg"
-  vpc_zone_identifier       = data.aws_subnet_ids.all.ids
-  health_check_type         = "EC2"
+  vpc_zone_identifier       = data.aws_subnet_ids.public.ids
+  health_check_type         = "ELB"
   min_size                  = 0
   max_size                  = 1
   desired_capacity          = 0
@@ -86,12 +112,12 @@ module "example_asg" {
   tags = [
     {
       key                 = "Environment"
-      value               = "dev"
+      value               = "stage"
       propagate_at_launch = true
     },
     {
-      key                 = "Project"
-      value               = "megasecret"
+      key                 = "Name"
+      value               = "autoscale"
       propagate_at_launch = true
     },
   ]
@@ -100,13 +126,16 @@ module "example_asg" {
 ######
 # ELB
 ######
+
+#
 module "elb" {
   source = "terraform-aws-modules/elb/aws"
 
-  name = "elb-example"
+  name = var.elbname
 
-  subnets         = data.aws_subnet_ids.all.ids
-  security_groups = [data.aws_security_group.default.id]
+  subnets         = data.aws_subnet_ids.public.ids
+  #security_groups = [data.aws_security_group.this.*.id]
+  security_groups = [var.appname]
   internal        = false
 
   listener = [

@@ -67,7 +67,7 @@ variable "recreate_asg_when_lc_changes" {
 variable "name" {
   description = "Creates a unique name beginning with the specified prefix"
   type        = string
-  default   = "usbank"
+  default   = "usbank-asg"
 }
 
 variable "lc_name" {
@@ -85,7 +85,7 @@ variable "asg_name" {
 variable "launch_configuration" {
   description = "The name of the launch configuration to use (if it is created outside of this module)"
   type        = string
-  default     = ""
+  default     = "usbank_launchconfig"
 }
 
 # Launch configuration
@@ -110,19 +110,19 @@ variable "iam_instance_profile" {
 variable "key_name" {
   description = "The key name that should be used for the instance"
   type        = string
-  default     = "web"
+  default     = "ansiblekey"
 }
 
 variable "security_groups" {
   description = "A list of security group IDs to assign to the launch configuration"
   type        = list(string)
-  default     = []
+  default     = ["usbank-appserv"]
 }
 
 variable "associate_public_ip_address" {
   description = "Associate a public ip address with an instance in a VPC"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "user_data" {
@@ -201,7 +201,7 @@ variable "desired_capacity" {
 variable "vpc_zone_identifier" {
   description = "A list of subnet IDs to launch resources in"
   type        = list(string)
-  default     = ["subnet-0e20da1368e759895","subnet-0362a51a955d46f09"]
+  default     = ["subnet-0905813c3ca2e8756","subnet-0902f7d96003c47fb"]
 }
 
 variable "default_cooldown" {

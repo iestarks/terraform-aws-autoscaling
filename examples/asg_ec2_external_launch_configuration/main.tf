@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "eu-west-1"
+  region = "us-east-1"
 
   # Make it faster by skipping something
   skip_get_ec2_platforms      = true
@@ -9,16 +9,43 @@ provider "aws" {
   skip_requesting_account_id  = true
 }
 
+
+
+#############################################################
+# Data sources to get VPC Details
 ##############################################################
-# Data sources to get VPC, subnets and security group details
-##############################################################
-data "aws_vpc" "default" {
-  default = true
+
+
+data "aws_vpc" "usbank_vpc" {
+  filter {
+    name = "tag:Name"
+    values = [var.vpcname]
+  }
 }
 
+##############################################################
+# Data sources to get subnets
+##############################################################
+
 data "aws_subnet_ids" "all" {
-  vpc_id = data.aws_vpc.default.id
+  vpc_id = data.aws_vpc.usbank_vpc.id
+   filter {
+    name   = "tag:10.60.3.0/24"
+    values = ["az2-pri-subnet-3"] # insert value here
+  }
 }
+
+
+data "aws_security_group" "this" {
+  vpc_id = data.aws_vpc.usbank_vpc.id
+  name   = var.elbsgname
+   filter {
+    name   = "tag:Name"
+    values = ["usbank-appserv"]
+  }
+}
+
+
 
 data "aws_ami" "amazon_linux" {
   most_recent = true
@@ -68,9 +95,9 @@ module "example" {
   recreate_asg_when_lc_changes = true
 
   # Auto scaling group
-  asg_name                  = "example-asg"
+  asg_name                  = var.appsgname
   vpc_zone_identifier       = data.aws_subnet_ids.all.ids
-  health_check_type         = "EC2"
+  health_check_type         = "ELB"
   min_size                  = 0
   max_size                  = 1
   desired_capacity          = 0
