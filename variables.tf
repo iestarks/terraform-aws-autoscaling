@@ -198,11 +198,11 @@ variable "desired_capacity" {
   default =  "2"
 }
 
-variable "vpc_zone_identifier" {
-  description = "A list of subnet IDs to launch resources in"
-  type        = list(string)
-  default     = ["subnet-0905813c3ca2e8756","subnet-0902f7d96003c47fb"]
-}
+# variable "vpc_zone_identifier" {
+#   description = "A list of subnet IDs to launch resources in"
+#   type        = list(string)
+#   default     = ["subnet-0905813c3ca2e8756","subnet-0902f7d96003c47fb"]
+# }
 
 variable "default_cooldown" {
   description = "The amount of time, in seconds, after a scaling activity completes before another scaling activity can start"

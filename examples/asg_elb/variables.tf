@@ -1,7 +1,7 @@
 variable "elbname" {
   description = "ELB Security Group Name"
   type        = string
-  default = "autoscaling-elb2"
+  default = "autoscaling-elb"
 }
 
 variable "create_lc" {

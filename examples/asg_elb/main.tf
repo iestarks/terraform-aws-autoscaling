@@ -4,7 +4,7 @@ provider "aws" {
 
 
 locals{
-    subnet_ids_string = join(",", data.aws_subnet_ids.database.ids)
+    subnet_ids_string = join(",", data.aws_subnet_ids.private.ids)
   subnet_ids_list = split(",", local.subnet_ids_string)
 
 }
@@ -24,7 +24,7 @@ data "aws_vpc" "usbank_vpc" {
 # Data sources to get subnets
 ##############################################################
 
-data "aws_subnet_ids" "database" {
+data "aws_subnet_ids" "private" {
   vpc_id = data.aws_vpc.usbank_vpc.id
  tags = {
     Name = "bankus_east-1-vpc-public-*"
@@ -38,7 +38,7 @@ data "aws_subnet_ids" "database" {
 
 data "aws_subnet" "private" {
   vpc_id = data.aws_vpc.usbank_vpc.id
-  count = length(data.aws_subnet_ids.database.ids)
+  count = length(data.aws_subnet_ids.private.ids)
   id    = local.subnet_ids_list[count.index]
 }
 
