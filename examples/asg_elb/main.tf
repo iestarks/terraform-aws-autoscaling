@@ -2,6 +2,13 @@ provider "aws" {
   region = "us-east-1"
 }
 
+
+locals{
+    subnet_ids_string = join(",", data.aws_subnet_ids.private.ids)
+  subnet_ids_list = split(",", local.subnet_ids_string)
+
+}
+
 #############################################################
 # Data sources to get VPC Details
 ##############################################################
@@ -17,31 +24,35 @@ data "aws_vpc" "usbank_vpc" {
 # Data sources to get subnets
 ##############################################################
 
-data "aws_subnet_ids" "public" {
+data "aws_subnet_ids" "private" {
+  vpc_id = data.aws_vpc.usbank_vpc.id
+ tags = {
+    Name = "bankus_east-1-vpc-public-*"
+ }
+
+  # tags = {
+  # Name = "bankus_east-1-vpc-db-us-east-1a",
+  # Name = "bankus_east-1-vpc-db-us-east-1c",  # insert value here
+
+}
+
+data "aws_subnet" "private" {
+  vpc_id = data.aws_vpc.usbank_vpc.id
+  count = length(data.aws_subnet_ids.private.ids)
+  id    = local.subnet_ids_list[count.index]
+}
+
+
+data "aws_security_group" "this" {
   vpc_id = data.aws_vpc.usbank_vpc.id
   #  filter {
   #   name   = "tag:Name"
      #values = ["bankus_east-1-vpc-public-us-east-1a"] # insert value here
   tags = {
-  Name = "bankus_east-1-vpc-public-us-east-1a" # insert value here
+  Name = "usbank-appserv"
+  # insert value here
   }
 }
-
-
-
-data "aws_security_group" "this" {
- vpc_id = data.aws_vpc.usbank_vpc.id
-  #  filter {
-  #   name   = "tag:Name"
-     #values = ["bankus_east-1-vpc-public-us-east-1a"] # insert value here
-  tags = {
-  Name = "usbank-appserv" # insert value here
-  }
-}
-
-
-
-
 
 data "aws_ami" "amazon_linux" {
   most_recent = true
@@ -67,22 +78,28 @@ data "aws_ami" "amazon_linux" {
 ######
 # Launch configuration and autoscaling group
 ######
+
+
+
 module "example_asg" {
   source = "../../"
 
-  name = "example-with-elb"
+  name = "usbankasg-with-elb"
 
   # Launch configuration
   #
   # launch_configuration = "my-existing-launch-configuration" # Use the existing launch configuration
   # create_lc = false # disables creation of launch configuration
-  lc_name = "example-lc"
+  lc_name = "usbank-lc"
 
   image_id        = data.aws_ami.amazon_linux.id
   instance_type   = "t2.micro"
   security_groups = [data.aws_security_group.this.id]
   #security_groups = var.appsgname
   load_balancers  = [module.elb.this_elb_id]
+  recreate_asg_when_lc_changes = var.recreate_asg_when_lc_changes
+  associate_public_ip_address  = true
+
 
   ebs_block_device = [
     {
@@ -102,7 +119,7 @@ module "example_asg" {
 
   # Auto scaling group
   asg_name                  = "example-asg"
-  vpc_zone_identifier       = data.aws_subnet_ids.public.ids
+  #vpc_zone_identifier       = data.aws_subnet.private.*.id
   health_check_type         = "ELB"
   min_size                  = 0
   max_size                  = 1
@@ -117,7 +134,7 @@ module "example_asg" {
     },
     {
       key                 = "Name"
-      value               = "autoscale"
+      value               = "ansiblekey"
       propagate_at_launch = true
     },
   ]
@@ -133,9 +150,9 @@ module "elb" {
 
   name = var.elbname
 
-  subnets         = data.aws_subnet_ids.public.ids
-  #security_groups = [data.aws_security_group.this.*.id]
-  security_groups = [var.appname]
+  subnets         = data.aws_subnet.private.*.id
+  security_groups = data.aws_security_group.this.*.id
+  #security_groups = [var.appname]
   internal        = false
 
   listener = [
@@ -160,3 +177,5 @@ module "elb" {
     Environment = "dev"
   }
 }
+##########
+### Pre ELB integration
