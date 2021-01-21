@@ -1,3 +1,61 @@
+locals{
+    subnet_ids_string = join(",", data.aws_subnet_ids.database.ids)
+  subnet_ids_list = split(",", local.subnet_ids_string)
+
+}
+
+#############################################################
+# Data sources to get VPC Details
+##############################################################
+data "aws_vpc" "usbank_vpc" {
+  filter {
+    name = "tag:Name"
+    values = ["bankus_east-1-vpc"]
+  }
+}
+
+
+##############################################################
+# Data sources to get subnets
+##############################################################
+
+data "aws_subnet_ids" "database" {
+  vpc_id = data.aws_vpc.usbank_vpc.id
+ tags = {
+    Name = "bankus_east-1-vpc-public-*"
+ }
+
+  # tags = {
+  # Name = "bankus_east-1-vpc-db-us-east-1a",
+  # Name = "bankus_east-1-vpc-db-us-east-1c",  # insert value here
+
+}
+
+data "aws_subnet" "private" {
+  vpc_id = data.aws_vpc.usbank_vpc.id
+  count = length(data.aws_subnet_ids.database.ids)
+  id    = local.subnet_ids_list[count.index]
+}
+
+
+data "aws_security_group" "this" {
+  vpc_id = data.aws_vpc.usbank_vpc.id
+  #  filter {
+  #   name   = "tag:Name"
+     #values = ["bankus_east-1-vpc-public-us-east-1a"] # insert value here
+  tags = {
+  Name = "usbank-appserv"
+  # insert value here
+  }
+}
+
+
+
+
+
+
+
+
 #######################
 # Launch configuration.
 #######################
@@ -13,7 +71,7 @@ resource "aws_launch_configuration" "this" {
   instance_type               = var.instance_type
   iam_instance_profile        = var.iam_instance_profile
   key_name                    = var.key_name
-  security_groups             = var.security_groups
+  security_groups             = [data.aws_security_group.this.id]
   associate_public_ip_address = var.associate_public_ip_address
   user_data                   = var.user_data
   user_data_base64            = var.user_data_base64
@@ -78,7 +136,7 @@ resource "aws_autoscaling_group" "this" {
     ),
   )}-"
   launch_configuration = var.create_lc ? element(concat(aws_launch_configuration.this.*.name, [""]), 0) : var.launch_configuration
-  vpc_zone_identifier  = var.vpc_zone_identifier
+  vpc_zone_identifier  = data.aws_subnet.private.*.id
   max_size             = var.max_size
   min_size             = var.min_size
   desired_capacity     = var.desired_capacity
