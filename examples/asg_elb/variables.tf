@@ -4,6 +4,11 @@ variable "elbname" {
   default = "autoscaling-elb"
 }
 
+variable "create_lc" {
+  description = "Whether to create launch configuration"
+  type        = bool
+  default     = true
+}
 
 
 variable "appname" {
@@ -18,4 +23,8 @@ variable "appsgname" {
   default = "usbank-appserv"
 }
 
-
+variable "recreate_asg_when_lc_changes" {
+  description = "Whether to recreate an autoscaling group when launch configuration changes"
+  type        = bool
+  default     = false
+}
